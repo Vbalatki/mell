@@ -17,14 +17,37 @@ export default function App() {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [isPaymentSuccessOpen, setIsPaymentSuccessOpen] = useState<boolean>(false);
   const [targetMellstroy, setTargetMellstroy] = useState<Mellstroy>(MELLSTROYS[0]);
+  const [preloadedVideoUrl, setPreloadedVideoUrl] = useState<string | undefined>(undefined);
   const lastSelectedIdRef = useRef<number | undefined>(undefined);
 
-  // Background cache preloading of target video immediately upon selection
+  // Качаем видео результата ОДИН раз в память (Blob) сразу как выбран Меллстрой.
+  // Рулетка и экран результата получают уже готовый blob:-URL — это не сетевой
+  // запрос, поэтому размонтирование компонента больше не может его оборвать.
   useEffect(() => {
-    if (!targetMellstroy?.video) return;
-    fetch(targetMellstroy.video)
-      .then((r) => r.blob())
-      .catch(() => {});
+    if (!targetMellstroy?.video) {
+      setPreloadedVideoUrl(undefined);
+      return;
+    }
+
+    const controller = new AbortController();
+    let createdUrl: string | null = null;
+    setPreloadedVideoUrl(undefined);
+
+    fetch(targetMellstroy.video, { signal: controller.signal })
+      .then((res) => res.blob())
+      .then((blob) => {
+        createdUrl = URL.createObjectURL(blob);
+        setPreloadedVideoUrl(createdUrl);
+      })
+      .catch(() => {
+        // не удалось (в т.ч. отмена при быстром переролле) — компоненты ниже
+        // используют обычный URL из mellstroy.video как запасной вариант
+      });
+
+    return () => {
+      controller.abort();
+      if (createdUrl) URL.revokeObjectURL(createdUrl);
+    };
   }, [targetMellstroy]);
 
   const handleBirthdaySubmit = () => {
@@ -78,6 +101,7 @@ export default function App() {
         {step === 'roulette' && (
           <Roulette
             targetMellstroy={targetMellstroy}
+            videoUrl={preloadedVideoUrl}
             onFinished={handleRouletteFinish}
           />
         )}
@@ -85,6 +109,7 @@ export default function App() {
         {step === 'result' && (
           <ResultScreen
             mellstroy={targetMellstroy}
+            videoUrl={preloadedVideoUrl}
             birthday={birthday}
             onTryAgain={handleTryAgain}
           />

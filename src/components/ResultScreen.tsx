@@ -7,33 +7,42 @@ import { soundManager } from '../utils/audio';
 
 interface ResultScreenProps {
   mellstroy: Mellstroy;
+  videoUrl?: string;
   birthday: string;
   onTryAgain: () => void;
 }
 
 export const ResultScreen: React.FC<ResultScreenProps> = ({
   mellstroy,
+  videoUrl,
   birthday,
   onTryAgain,
 }) => {
   const [copied, setCopied] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const activeVideoSrc = videoUrl || mellstroy.video;
 
-  // Auto-play safely with fallback
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     video.currentTime = 0;
-    video.muted = true;
-    setIsMuted(true);
+    video.muted = false;
 
     const playPromise = video.play();
     if (playPromise !== undefined) {
-      playPromise.catch(() => {});
+      playPromise
+        .then(() => {
+          setIsMuted(false);
+        })
+        .catch(() => {
+          video.muted = true;
+          setIsMuted(true);
+          video.play().catch(() => {});
+        });
     }
-  }, [mellstroy]);
+  }, [mellstroy, activeVideoSrc]);
 
   const toggleSound = () => {
     const video = videoRef.current;
@@ -98,11 +107,11 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
 
           {/* Video Container - Pure Instant Autoplay with Sound */}
           <div className="relative w-full aspect-[4/5] sm:aspect-square max-w-md mx-auto rounded-2xl overflow-hidden bg-slate-950 border border-white/20 shadow-2xl select-none group">
-            {mellstroy.video ? (
+            {activeVideoSrc ? (
               <>
                 <video
                   ref={videoRef}
-                  src={mellstroy.video}
+                  src={activeVideoSrc}
                   poster={mellstroy.image}
                   autoPlay
                   loop

@@ -7,13 +7,14 @@ import { soundManager } from '../utils/audio';
 
 interface RouletteProps {
   targetMellstroy: Mellstroy;
+  videoUrl?: string;
   onFinished: () => void;
 }
 
 const TARGET_POSITION_INDEX = 48;
 const TOTAL_CARDS = 60;
 
-export const Roulette: React.FC<RouletteProps> = ({ targetMellstroy, onFinished }) => {
+export const Roulette: React.FC<RouletteProps> = ({ targetMellstroy, videoUrl, onFinished }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -144,6 +145,7 @@ export const Roulette: React.FC<RouletteProps> = ({ targetMellstroy, onFinished 
                   mellstroy={card}
                   isHighlighted={hasStopped && isTarget}
                   playVideo={hasStopped && isTarget}
+                  videoOverrideUrl={isTarget ? videoUrl : undefined}
                 />
               );
             })}

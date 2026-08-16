@@ -5,10 +5,13 @@ interface RouletteCardProps {
   mellstroy: Mellstroy;
   isHighlighted?: boolean;
   playVideo?: boolean; // true только для выигрышной карточки после остановки барабана
+  videoOverrideUrl?: string; // уже загруженный в память blob:-URL из App.tsx
 }
 
 export const RouletteCard: React.FC<RouletteCardProps> = React.memo(
-  ({ mellstroy, isHighlighted = false, playVideo = false }) => {
+  ({ mellstroy, isHighlighted = false, playVideo = false, videoOverrideUrl }) => {
+    const videoSrc = videoOverrideUrl || mellstroy.video;
+
     return (
       <div
         className={`relative w-44 sm:w-52 h-64 sm:h-72 shrink-0 rounded-2xl p-2.5 transition-all duration-300 select-none overflow-hidden ${
@@ -22,9 +25,9 @@ export const RouletteCard: React.FC<RouletteCardProps> = React.memo(
         )}
 
         <div className="relative w-full h-36 sm:h-44 rounded-xl overflow-hidden bg-slate-950 border border-slate-800/80 mb-2.5 select-none pointer-events-none">
-          {playVideo && mellstroy.video ? (
+          {playVideo && videoSrc ? (
             <video
-              src={mellstroy.video}
+              src={videoSrc}
               poster={mellstroy.image}
               autoPlay
               loop
