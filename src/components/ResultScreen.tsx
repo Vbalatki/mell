@@ -2,69 +2,50 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { Mellstroy } from '../types';
 import { formatRussianDate } from '../utils/calculateResult';
-import { Sparkles, RotateCcw, Share2, Trophy, Check, Volume2, VolumeX, Play, Loader2 } from 'lucide-react';
+import { Sparkles, RotateCcw, Share2, Trophy, Check, Volume2, VolumeX, Play } from 'lucide-react';
 import { soundManager } from '../utils/audio';
 
 interface ResultScreenProps {
   mellstroy: Mellstroy;
-  videoUrl?: string;
-  birthday: string;
+  birthday?: string;
   onTryAgain: () => void;
 }
 
 export const ResultScreen: React.FC<ResultScreenProps> = ({
   mellstroy,
-  videoUrl,
   birthday,
   onTryAgain,
 }) => {
   const [copied, setCopied] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [videoError, setVideoError] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const activeVideoSrc = videoUrl || mellstroy.video;
 
   useEffect(() => {
+    setVideoError(false);
     const video = videoRef.current;
     if (!video) return;
 
-    setIsLoading(true);
-    video.currentTime = 0;
     video.muted = isMuted;
-
-    const playPromise = video.play();
-    if (playPromise !== undefined) {
-      playPromise
-        .then(() => {
-          setIsPlaying(true);
-          setIsLoading(false);
-        })
-        .catch(() => {
-          // If unmuted autoplay fails, fallback to muted autoplay
-          video.muted = true;
-          setIsMuted(true);
-          video.play()
-            .then(() => {
-              setIsPlaying(true);
-              setIsLoading(false);
-            })
-            .catch(() => {
-              setIsPlaying(false);
-              setIsLoading(false);
-            });
-        });
-    }
-  }, [activeVideoSrc]);
+    video.play()
+      .then(() => setIsPlaying(true))
+      .catch(() => {
+        // Autoplay policy fallback: guarantee playback by forcing muted
+        video.muted = true;
+        setIsMuted(true);
+        video.play()
+          .then(() => setIsPlaying(true))
+          .catch(() => setIsPlaying(false));
+      });
+  }, [mellstroy.id]);
 
   const togglePlayPause = () => {
     const video = videoRef.current;
     if (!video) return;
 
     if (video.paused) {
-      video.play()
-        .then(() => setIsPlaying(true))
-        .catch(() => {});
+      video.play().then(() => setIsPlaying(true)).catch(() => {});
     } else {
       video.pause();
       setIsPlaying(false);
@@ -140,11 +121,11 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
             onClick={togglePlayPause}
             className="relative w-full aspect-[4/5] sm:aspect-square max-w-md mx-auto rounded-2xl overflow-hidden bg-slate-950 border border-white/20 shadow-2xl select-none group cursor-pointer"
           >
-            {activeVideoSrc ? (
+            {mellstroy.video && !videoError ? (
               <>
                 <video
                   ref={videoRef}
-                  src={activeVideoSrc}
+                  src={mellstroy.video}
                   poster={mellstroy.image}
                   autoPlay
                   loop
@@ -153,25 +134,14 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
                   preload="auto"
                   disablePictureInPicture
                   controls={false}
-                  onLoadedData={() => setIsLoading(false)}
-                  onWaiting={() => setIsLoading(true)}
-                  onPlaying={() => {
-                    setIsPlaying(true);
-                    setIsLoading(false);
-                  }}
+                  onError={() => setVideoError(true)}
+                  onPlaying={() => setIsPlaying(true)}
                   onPause={() => setIsPlaying(false)}
                   className="w-full h-full object-cover object-center"
                 />
 
-                {/* Loading spinner overlay */}
-                {isLoading && (
-                  <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-[2px] flex items-center justify-center pointer-events-none">
-                    <Loader2 className="w-10 h-10 text-amber-400 animate-spin" />
-                  </div>
-                )}
-
                 {/* Big play button if paused */}
-                {!isPlaying && !isLoading && (
+                {!isPlaying && (
                   <div className="absolute inset-0 bg-slate-950/30 flex items-center justify-center pointer-events-none">
                     <div className="w-16 h-16 rounded-full bg-amber-500/90 text-slate-950 flex items-center justify-center shadow-xl shadow-amber-500/30 backdrop-blur-md">
                       <Play className="w-8 h-8 fill-current ml-1" />
