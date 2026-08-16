@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { Mellstroy } from '../types';
 import { formatRussianDate } from '../utils/calculateResult';
-import { Sparkles, RotateCcw, Share2, Trophy, Check, Volume2, VolumeX } from 'lucide-react';
+import { Sparkles, RotateCcw, Share2, Trophy, Check, Volume2, VolumeX, Play, Loader2 } from 'lucide-react';
 import { soundManager } from '../utils/audio';
 
 interface ResultScreenProps {
@@ -19,7 +19,9 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
   onTryAgain,
 }) => {
   const [copied, setCopied] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const activeVideoSrc = videoUrl || mellstroy.video;
 
@@ -27,31 +29,59 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
     const video = videoRef.current;
     if (!video) return;
 
+    setIsLoading(true);
     video.currentTime = 0;
-    video.muted = false;
+    video.muted = isMuted;
 
     const playPromise = video.play();
     if (playPromise !== undefined) {
       playPromise
         .then(() => {
-          setIsMuted(false);
+          setIsPlaying(true);
+          setIsLoading(false);
         })
         .catch(() => {
+          // If unmuted autoplay fails, fallback to muted autoplay
           video.muted = true;
           setIsMuted(true);
-          video.play().catch(() => {});
+          video.play()
+            .then(() => {
+              setIsPlaying(true);
+              setIsLoading(false);
+            })
+            .catch(() => {
+              setIsPlaying(false);
+              setIsLoading(false);
+            });
         });
     }
-  }, [mellstroy, activeVideoSrc]);
+  }, [activeVideoSrc]);
 
-  const toggleSound = () => {
+  const togglePlayPause = () => {
     const video = videoRef.current;
     if (!video) return;
+
+    if (video.paused) {
+      video.play()
+        .then(() => setIsPlaying(true))
+        .catch(() => {});
+    } else {
+      video.pause();
+      setIsPlaying(false);
+    }
+  };
+
+  const toggleSound = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const video = videoRef.current;
+    if (!video) return;
+
     const nextMuted = !isMuted;
     video.muted = nextMuted;
     setIsMuted(nextMuted);
-    if (!nextMuted) {
-      video.play().catch(() => {});
+
+    if (video.paused) {
+      video.play().then(() => setIsPlaying(true)).catch(() => {});
     }
   };
 
@@ -106,7 +136,10 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
           <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-400 via-rose-500 to-purple-600" />
 
           {/* Video Container - Pure Instant Autoplay with Sound */}
-          <div className="relative w-full aspect-[4/5] sm:aspect-square max-w-md mx-auto rounded-2xl overflow-hidden bg-slate-950 border border-white/20 shadow-2xl select-none group">
+          <div
+            onClick={togglePlayPause}
+            className="relative w-full aspect-[4/5] sm:aspect-square max-w-md mx-auto rounded-2xl overflow-hidden bg-slate-950 border border-white/20 shadow-2xl select-none group cursor-pointer"
+          >
             {activeVideoSrc ? (
               <>
                 <video
@@ -120,14 +153,37 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
                   preload="auto"
                   disablePictureInPicture
                   controls={false}
-                  className="w-full h-full object-cover object-center pointer-events-none"
+                  onLoadedData={() => setIsLoading(false)}
+                  onWaiting={() => setIsLoading(true)}
+                  onPlaying={() => {
+                    setIsPlaying(true);
+                    setIsLoading(false);
+                  }}
+                  onPause={() => setIsPlaying(false)}
+                  className="w-full h-full object-cover object-center"
                 />
 
-                {/* Subtle sound toggle button in corner */}
+                {/* Loading spinner overlay */}
+                {isLoading && (
+                  <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-[2px] flex items-center justify-center pointer-events-none">
+                    <Loader2 className="w-10 h-10 text-amber-400 animate-spin" />
+                  </div>
+                )}
+
+                {/* Big play button if paused */}
+                {!isPlaying && !isLoading && (
+                  <div className="absolute inset-0 bg-slate-950/30 flex items-center justify-center pointer-events-none">
+                    <div className="w-16 h-16 rounded-full bg-amber-500/90 text-slate-950 flex items-center justify-center shadow-xl shadow-amber-500/30 backdrop-blur-md">
+                      <Play className="w-8 h-8 fill-current ml-1" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Sound toggle button in corner */}
                 <button
                   type="button"
                   onClick={toggleSound}
-                  className="absolute bottom-3 right-3 p-2.5 rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-white/20 text-white backdrop-blur-md transition-all active:scale-95 shadow-lg flex items-center gap-1.5 text-xs font-bold cursor-pointer"
+                  className="absolute bottom-3 right-3 p-2.5 rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-white/20 text-white backdrop-blur-md transition-all active:scale-95 shadow-lg flex items-center gap-1.5 text-xs font-bold cursor-pointer z-30"
                   title={isMuted ? 'Включить звук' : 'Выключить звук'}
                 >
                   {isMuted ? (
@@ -190,4 +246,5 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
     </div>
   );
 };
+
 

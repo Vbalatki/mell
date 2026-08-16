@@ -101,7 +101,6 @@ export default function App() {
         {step === 'roulette' && (
           <Roulette
             targetMellstroy={targetMellstroy}
-            videoUrl={preloadedVideoUrl}
             onFinished={handleRouletteFinish}
           />
         )}

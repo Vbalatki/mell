@@ -4,19 +4,15 @@ import { Mellstroy } from '../types';
 interface RouletteCardProps {
   mellstroy: Mellstroy;
   isHighlighted?: boolean;
-  playVideo?: boolean; // true только для выигрышной карточки после остановки барабана
-  videoOverrideUrl?: string; // уже загруженный в память blob:-URL из App.tsx
 }
 
 export const RouletteCard: React.FC<RouletteCardProps> = React.memo(
-  ({ mellstroy, isHighlighted = false, playVideo = false, videoOverrideUrl }) => {
-    const videoSrc = videoOverrideUrl || mellstroy.video;
-
+  ({ mellstroy, isHighlighted = false }) => {
     return (
       <div
         className={`relative w-44 sm:w-52 h-64 sm:h-72 shrink-0 rounded-2xl p-2.5 transition-all duration-300 select-none overflow-hidden ${
           isHighlighted
-            ? 'bg-gradient-to-b from-amber-500/30 via-slate-900 to-slate-950 border-2 border-amber-400 shadow-2xl shadow-amber-500/40 scale-105 z-20'
+            ? 'bg-gradient-to-b from-amber-500/30 via-slate-900 to-slate-950 border-2 border-amber-400 shadow-2xl shadow-amber-500/40 scale-105 z-20 animate-pulse'
             : 'bg-slate-900/90 border border-slate-800/80 opacity-80 hover:opacity-100'
         }`}
       >
@@ -25,26 +21,12 @@ export const RouletteCard: React.FC<RouletteCardProps> = React.memo(
         )}
 
         <div className="relative w-full h-36 sm:h-44 rounded-xl overflow-hidden bg-slate-950 border border-slate-800/80 mb-2.5 select-none pointer-events-none">
-          {playVideo && videoSrc ? (
-            <video
-              src={videoSrc}
-              poster={mellstroy.image}
-              autoPlay
-              loop
-              muted
-              playsInline
-              disablePictureInPicture
-              controls={false}
-              className="w-full h-full object-cover object-center"
-            />
-          ) : (
-            <img
-              src={mellstroy.image}
-              alt={mellstroy.name}
-              className="w-full h-full object-cover object-center"
-              referrerPolicy="no-referrer"
-            />
-          )}
+          <img
+            src={mellstroy.image}
+            alt={mellstroy.name}
+            className="w-full h-full object-cover object-center"
+            referrerPolicy="no-referrer"
+          />
         </div>
 
         <div className="text-center px-1">
@@ -58,3 +40,4 @@ export const RouletteCard: React.FC<RouletteCardProps> = React.memo(
 );
 
 RouletteCard.displayName = 'RouletteCard';
+
