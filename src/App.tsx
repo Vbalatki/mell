@@ -1,0 +1,124 @@
+import React, { useState, useRef } from 'react';
+import { Header } from './components/Header';
+import { BirthdayForm } from './components/BirthdayForm';
+import { PaymentModal } from './components/PaymentModal';
+import { PaymentSuccess } from './components/PaymentSuccess';
+import { Roulette } from './components/Roulette';
+import { ResultScreen } from './components/ResultScreen';
+import { getRandomMellstroyId } from './utils/calculateResult';
+import { getMellstroyById, MELLSTROYS } from './data/mellstroys';
+import { getAssetUrl } from './utils/assets';
+import { AppStep, Mellstroy } from './types';
+
+export default function App() {
+  const [birthday, setBirthday] = useState<string>('1998-12-15');
+  const [step, setStep] = useState<AppStep>('form');
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [isPaymentSuccessOpen, setIsPaymentSuccessOpen] = useState<boolean>(false);
+  const [targetMellstroy, setTargetMellstroy] = useState<Mellstroy>(MELLSTROYS[0]);
+  const lastSelectedIdRef = useRef<number | undefined>(undefined);
+
+  const handleBirthdaySubmit = () => {
+    const resultId = getRandomMellstroyId(lastSelectedIdRef.current);
+    lastSelectedIdRef.current = resultId;
+    const selected = getMellstroyById(resultId);
+    setTargetMellstroy(selected);
+    setIsPaymentModalOpen(true);
+  };
+
+  const handleStartPayment = async () => {
+    setIsProcessing(true);
+    setIsPaymentModalOpen(false);
+    setIsPaymentSuccessOpen(true);
+    await new Promise((resolve) => setTimeout(resolve, 1400));
+    setIsProcessing(false);
+  };
+
+  const handlePaymentComplete = () => {
+    setIsPaymentSuccessOpen(false);
+    setStep('roulette');
+  };
+
+  const handleRouletteFinish = () => {
+    setStep('result');
+  };
+
+  const handleTryAgain = () => {
+    setStep('form');
+  };
+
+  return (
+    <div className="relative min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-amber-500/30 selection:text-amber-200 font-sans overflow-x-hidden">
+      {/*
+        Скрытый прелоадер видео победителя.
+        Монтируется, как только Меллстрой выбран (ещё на экране оплаты),
+        то есть у браузера есть ~3-8 секунд, чтобы буферизовать ролик
+        ДО того, как он реально появится на выигрышной карточке в рулетке
+        или на экране результата. Грузится только 1 файл, а не все 15.
+      */}
+      {targetMellstroy?.video && (
+        <video
+          key={targetMellstroy.video}
+          src={targetMellstroy.video}
+          preload="auto"
+          muted
+          className="hidden pointer-events-none opacity-0"
+        />
+      )}
+
+      <div
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat pointer-events-none z-0 brightness-95 contrast-105"
+        style={{ backgroundImage: `url("${getAssetUrl('pics/bg.jpg')}")` }}
+      />
+      <div className="fixed inset-0 bg-gradient-to-b from-slate-950/45 via-slate-950/35 to-slate-950/60 pointer-events-none z-0" />
+
+      <Header onReset={handleTryAgain} />
+
+      <main className="relative z-10 flex-1 flex flex-col justify-center">
+        {step === 'form' && (
+          <BirthdayForm
+            birthday={birthday}
+            onBirthdayChange={setBirthday}
+            onSubmit={handleBirthdaySubmit}
+          />
+        )}
+
+        {step === 'roulette' && (
+          <Roulette
+            targetMellstroy={targetMellstroy}
+            onFinished={handleRouletteFinish}
+          />
+        )}
+
+        {step === 'result' && (
+          <ResultScreen
+            mellstroy={targetMellstroy}
+            birthday={birthday}
+            onTryAgain={handleTryAgain}
+          />
+        )}
+      </main>
+
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        onSubmitPayment={handleStartPayment}
+        isProcessing={isProcessing}
+      />
+
+      {isPaymentSuccessOpen && (
+        <PaymentSuccess
+          isProcessing={isProcessing}
+          onComplete={handlePaymentComplete}
+        />
+      )}
+
+      <footer className="relative z-10 py-6 px-4 border-t border-slate-800/60 text-center text-xs text-slate-400 bg-slate-950/80 backdrop-blur-md">
+        <p>
+          Развлекательный проект «Какой ты Меллстрой?». Все права защищены.
+        </p>
+      </footer>
+    </div>
+  );
+}

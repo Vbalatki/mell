@@ -1,0 +1,6 @@
+{
+  "name": "Какой ты Меллстрой?",
+  "description": "Шуточный интерактивный веб-сервис: узнай своего Меллстроя по дате рождения с анимационной рулеткой и демо-оплатой.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
