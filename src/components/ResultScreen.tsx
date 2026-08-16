@@ -204,7 +204,15 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
                 src={mellstroy.image}
                 alt={mellstroy.name}
                 className="w-full h-full object-cover object-center"
-                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  if (!target.dataset.retried) {
+                    target.dataset.retried = '1';
+                    target.src = target.src.includes('./')
+                      ? target.src.replace('./', '/')
+                      : `./${mellstroy.image.replace(/^\//, '')}`;
+                  }
+                }}
               />
             )}
           </div>
