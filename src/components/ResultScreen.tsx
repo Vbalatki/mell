@@ -103,6 +103,7 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
                 <video
                   ref={videoRef}
                   src={mellstroy.video}
+                  poster={mellstroy.image}
                   autoPlay
                   loop
                   muted={isMuted}

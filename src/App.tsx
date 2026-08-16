@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Header } from './components/Header';
 import { BirthdayForm } from './components/BirthdayForm';
 import { PaymentModal } from './components/PaymentModal';
@@ -18,6 +18,14 @@ export default function App() {
   const [isPaymentSuccessOpen, setIsPaymentSuccessOpen] = useState<boolean>(false);
   const [targetMellstroy, setTargetMellstroy] = useState<Mellstroy>(MELLSTROYS[0]);
   const lastSelectedIdRef = useRef<number | undefined>(undefined);
+
+  // Background cache preloading of target video immediately upon selection
+  useEffect(() => {
+    if (!targetMellstroy?.video) return;
+    fetch(targetMellstroy.video)
+      .then((r) => r.blob())
+      .catch(() => {});
+  }, [targetMellstroy]);
 
   const handleBirthdaySubmit = () => {
     const resultId = getRandomMellstroyId(lastSelectedIdRef.current);
@@ -50,23 +58,6 @@ export default function App() {
 
   return (
     <div className="relative min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-amber-500/30 selection:text-amber-200 font-sans overflow-x-hidden">
-      {/*
-        Скрытый прелоадер видео победителя.
-        Монтируется, как только Меллстрой выбран (ещё на экране оплаты),
-        то есть у браузера есть ~3-8 секунд, чтобы буферизовать ролик
-        ДО того, как он реально появится на выигрышной карточке в рулетке
-        или на экране результата. Грузится только 1 файл, а не все 15.
-      */}
-      {targetMellstroy?.video && (
-        <video
-          key={targetMellstroy.video}
-          src={targetMellstroy.video}
-          preload="auto"
-          muted
-          className="hidden pointer-events-none opacity-0"
-        />
-      )}
-
       <div
         className="fixed inset-0 bg-cover bg-center bg-no-repeat pointer-events-none z-0 brightness-95 contrast-105"
         style={{ backgroundImage: `url("${getAssetUrl('pics/bg.jpg')}")` }}

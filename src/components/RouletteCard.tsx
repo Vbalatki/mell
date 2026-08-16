@@ -25,6 +25,7 @@ export const RouletteCard: React.FC<RouletteCardProps> = React.memo(
           {playVideo && mellstroy.video ? (
             <video
               src={mellstroy.video}
+              poster={mellstroy.image}
               autoPlay
               loop
               muted
@@ -39,7 +40,6 @@ export const RouletteCard: React.FC<RouletteCardProps> = React.memo(
               alt={mellstroy.name}
               className="w-full h-full object-cover object-center"
               referrerPolicy="no-referrer"
-              loading="lazy"
             />
           )}
         </div>
