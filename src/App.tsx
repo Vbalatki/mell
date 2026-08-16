@@ -20,6 +20,20 @@ export default function App() {
   const [preloadedVideoUrl, setPreloadedVideoUrl] = useState<string | undefined>(undefined);
   const lastSelectedIdRef = useRef<number | undefined>(undefined);
 
+  // Предзагрузка всех 3 базовых картинок и фона сразу при открытии сайта
+  useEffect(() => {
+    const imagesToPreload = [
+      getAssetUrl('pics/gold.jpg'),
+      getAssetUrl('pics/red.jpg'),
+      getAssetUrl('pics/blue.jpg'),
+      getAssetUrl('pics/bg.jpg'),
+    ];
+    imagesToPreload.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, []);
+
   // Качаем видео результата ОДИН раз в память (Blob) сразу как выбран Меллстрой.
   // Рулетка и экран результата получают уже готовый blob:-URL — это не сетевой
   // запрос, поэтому размонтирование компонента больше не может его оборвать.

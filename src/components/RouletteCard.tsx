@@ -20,16 +20,18 @@ export const RouletteCard: React.FC<RouletteCardProps> = React.memo(
           <div className="absolute inset-0 bg-gradient-to-t from-amber-500/20 via-transparent to-amber-500/10 pointer-events-none" />
         )}
 
-        <div className="relative w-full h-36 sm:h-44 rounded-xl overflow-hidden bg-slate-950 border border-slate-800/80 mb-2.5 select-none pointer-events-none">
+        <div className="relative w-full h-36 sm:h-44 rounded-xl overflow-hidden bg-slate-900/80 border border-slate-800/80 mb-2.5 select-none pointer-events-none flex items-center justify-center">
           <img
             src={mellstroy.image}
             alt={mellstroy.name}
+            loading="eager"
+            decoding="async"
             className="w-full h-full object-cover object-center"
             onError={(e) => {
               const target = e.currentTarget;
               if (!target.dataset.retried) {
                 target.dataset.retried = '1';
-                // Try absolute root if relative failed or vice versa
+                // Try alternate path if relative failed
                 target.src = target.src.includes('./')
                   ? target.src.replace('./', '/')
                   : `./${mellstroy.image.replace(/^\//, '')}`;
